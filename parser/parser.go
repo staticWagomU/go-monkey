@@ -1,25 +1,38 @@
 package parser
 
 import (
+	"fmt"
 	"github.com/staticWagomU/go-monkey/ast"
 	"github.com/staticWagomU/go-monkey/lexer"
 	"github.com/staticWagomU/go-monkey/token"
 )
 
 type Parser struct {
-	l *lexer.Lexer
-
+	l         *lexer.Lexer
+	errors    []string
 	curToken  token.Token
 	peekToken token.Token
 }
 
 func New(l *lexer.Lexer) *Parser {
-	p := &Parser{l: l}
+	p := &Parser{
+		l:      l,
+		errors: []string{},
+	}
 
 	p.nextToken() // ここだけでは、curTokenがセットされないので、2回呼び出す
 	p.nextToken()
 
 	return p
+}
+
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
+func (p *Parser) peekError(t token.TokenType) {
+	msg := fmt.Sprintf("expected next token to be %s, got %s insted", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) nextToken() {
@@ -64,7 +77,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	for!p.curTokenIs(token.SEMICOLON) {
+	for !p.curTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -84,6 +97,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool { // 次のトークンが�
 		p.nextToken()
 		return true
 	} else {
+		p.peekError(t)
 		return false
 	}
 }
